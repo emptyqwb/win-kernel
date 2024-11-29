@@ -1,0 +1,42 @@
+[package]
+name = "win-kernel"
+version = "2.11.11"
+authors = ["emptyqwb <you@example.com>"]
+edition = "2021"
+description = "windows-kernel"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/emptyqwb/win-kernel.git"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[features]
+default = ["alloc"]
+alloc = []
+system = []
+no-exec = []
+
+
+[dependencies]
+win-kernel-sys = { path = "../win-kernel-sys" }
+widestring = { version = "1.0.2", default-features = false, features = ["alloc"] }
+bitflags = "1.3"
+cty = "0.2"
+hashbrown = "0.14"
+cfg-if = "1.0.0"
+crossbeam = { version = "0.8.2", default-features = false, features = ["alloc"] }
+lock_api = "0.4.11"
+smallvec = "1.11.2"
+pin-project = "1.1.1"
+cooked-waker = "5.0.0"
+futures = { version = "0.3", default-features = false, features = ["alloc"] }
+futures-channel = { version = "0.3.29", default-features = false, features = ["alloc"] }
+crossbeam-queue = { version = "0.3.8", default-features = false, features = ["alloc"] }
+uid = "0.1.7"
+lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
