@@ -1,3 +1,4 @@
+//! iorequest mod
 use core::ops::Deref;
 
 use bitflags::bitflags;
@@ -14,6 +15,7 @@ use crate::ioctl::{ControlCode, RequiredAccess, TransferMethod};
 use crate::user_ptr::UserPtr;
 
 bitflags! {
+    /// IrpFlags
     pub struct IrpFlags: u32 {
         const NOCACHE = win_kernel_sys::base::IRP_NOCACHE;
         const PAGING_IO = win_kernel_sys::base::IRP_PAGING_IO;
@@ -35,6 +37,8 @@ bitflags! {
     }
 }
 
+
+/// iorequest inner [*mut IRP]
 pub struct IoRequest {
     irp: *mut IRP,
 }
@@ -84,6 +88,8 @@ impl IoRequest {
     }
 }
 
+
+/// ReadRequest inner [*mut IoRequest]
 pub struct ReadRequest {
     pub(crate) inner: IoRequest,
 }

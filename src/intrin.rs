@@ -1,3 +1,4 @@
+//! intrin mod is like intrin.h
 use win_kernel_sys::intrin::{read_msr_safe, write_msr_safe};
 
 use crate::error::{Error, IntoResult};

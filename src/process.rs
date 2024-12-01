@@ -1,3 +1,4 @@
+//! process mod
 use bitflags::bitflags;
 
 use win_kernel_sys::base::{
@@ -14,6 +15,8 @@ use crate::error::{Error, IntoResult};
 
 pub type ProcessId = usize;
 
+
+/// wrapper PEPROCESS and state
 #[derive(Clone, Debug)]
 pub struct Process {
     pub process: PEPROCESS,
@@ -21,16 +24,24 @@ pub struct Process {
 }
 
 impl Process {
+    /// out inner-> [`PEPROCESS`]
     pub fn as_ptr(&self) -> PEPROCESS {
         self.process
     }
 
+    /// like ['PsGetCurrentProcess()']
     pub fn current() -> Self {
         let process = unsafe { PsGetCurrentProcess() };
         let from_pid = false;
         Self { process, from_pid }
     }
 
+    /// like ['PsLookupProcessByProcessId()']
+    /// Examples
+    /// 
+    /// let process_tg = win_kernel::process::Process::by_id(1234).unwrap();
+    /// process_tg.attach();
+    /// 
     pub fn by_id(process_id: ProcessId) -> Result<Self, Error> {
         let mut process = core::ptr::null_mut();
         let from_pid = true;
@@ -50,7 +61,12 @@ impl Process {
 
         Self { process, from_pid }
     }
-
+    /// like ['KeStackAttachProcess()']
+    /// Examples
+    /// 
+    /// let process_tg = win_kernel::process::Process::by_id(1234).unwrap();
+    /// process_tg.attach();
+    /// 
     pub fn attach(&self) -> ProcessAttachment {
         unsafe { ProcessAttachment::attach(self.process) }
     }

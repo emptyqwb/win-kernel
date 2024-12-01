@@ -1,3 +1,5 @@
+//! memory mod
+
 use win_kernel_sys::base::_MEMORY_CACHING_TYPE as MEMORY_CACHING_TYPE;
 use win_kernel_sys::base::{
     MM_COPY_ADDRESS, MM_COPY_MEMORY_PHYSICAL, MM_COPY_MEMORY_VIRTUAL, PHYSICAL_ADDRESS,
@@ -51,6 +53,7 @@ impl Into<PHYSICAL_ADDRESS> for PhysicalAddress {
     }
 }
 
+/// The physical address
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum CopyAddress {
     Virtual(*mut core::ffi::c_void),
@@ -80,6 +83,7 @@ impl Into<(u32, MM_COPY_ADDRESS)> for CopyAddress {
     }
 }
 
+/// iomapping
 pub struct IoMapping {
     ptr: *mut core::ffi::c_void,
     size: usize,
@@ -121,7 +125,7 @@ impl Drop for IoMapping {
     }
 }
 
-#[cfg(not(feature = "system"))]
+#[cfg(feature = "system")]
 pub fn get_virtual_for_physical(addr: PhysicalAddress) -> *mut core::ffi::c_void {
     use win_kernel_sys::ntoskrnl::MmGetVirtualForPhysical;
 
@@ -130,6 +134,18 @@ pub fn get_virtual_for_physical(addr: PhysicalAddress) -> *mut core::ffi::c_void
     virt_addr as _
 }
 
+
+#[cfg(feature = "system")]
+pub fn get_physical_for_virtual(addr: u64) -> PhysicalAddress {
+    use win_kernel_sys::ntoskrnl::MmGetPhysicalAddress;
+
+    let virt_addr = unsafe {MmGetPhysicalAddress(addr as _).QuadPart as usize as u64};
+
+    PhysicalAddress(virt_addr)
+}
+
+
+/// read_memory
 pub fn read_memory(buffer: &mut [u8], source: CopyAddress) -> Result<usize, Error> {
     use win_kernel_sys::ntoskrnl::MmCopyMemory;
 
@@ -150,7 +166,7 @@ pub fn read_memory(buffer: &mut [u8], source: CopyAddress) -> Result<usize, Erro
     Ok(bytes as _)
 }
 
-#[cfg(not(feature = "system"))]
+#[cfg(feature = "system")]
 pub fn write_memory(target: CopyAddress, buffer: &[u8]) -> Result<usize, Error> {
     use win_kernel_sys::ntoskrnl::MmCopyMemory;
 

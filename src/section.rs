@@ -1,3 +1,4 @@
+//! section mod
 use bitflags::bitflags;
 use widestring::U16CString;
 

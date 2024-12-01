@@ -1,6 +1,6 @@
 [package]
 name = "win-kernel"
-version = "2.11.11"
+version = "2.11.15"
 authors = ["emptyqwb <you@example.com>"]
 edition = "2021"
 description = "windows-kernel"
@@ -17,14 +17,15 @@ panic = "abort"
 panic = "abort"
 
 [features]
-default = ["alloc"]
+default = ["alloc", "alloctag"]
 alloc = []
 system = []
 no-exec = []
+alloctag = []
 
 
 [dependencies]
-win-kernel-sys = { path = "../win-kernel-sys" }
+win-kernel-sys = "2.11.13"
 widestring = { version = "1.0.2", default-features = false, features = ["alloc"] }
 bitflags = "1.3"
 cty = "0.2"

@@ -1,3 +1,4 @@
+//! ioctl
 use bitflags::bitflags;
 
 use win_kernel_sys::base::{
@@ -8,14 +9,20 @@ use win_kernel_sys::base::{
 use crate::device::DeviceType;
 
 bitflags! {
+    /// RequiredAccess
     pub struct RequiredAccess: u32 {
+        /// All access, such as FILE_READ_DATA and FILE_WRITE_DATA
         const ANY_ACCESS = FILE_ANY_ACCESS;
+        /// Read data access
         const READ_DATA = FILE_READ_DATA;
+        /// Write data access
         const WRITE_DATA = FILE_WRITE_DATA;
+        /// Read and write data access
         const READ_WRITE_DATA = FILE_READ_DATA | FILE_WRITE_DATA;
     }
 }
 
+/// TransferMethod neither inputdirect outputdirect buffered
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u32)]
 pub enum TransferMethod {
@@ -25,7 +32,10 @@ pub enum TransferMethod {
     Buffered = METHOD_BUFFERED,
 }
 
+
 impl From<u32> for TransferMethod {
+    #[allow(non_snake_case)]
+    /// TransferMethod from u32
     fn from(value: u32) -> Self {
         match value & 0x3 {
             METHOD_NEITHER => Self::Neither,
@@ -37,7 +47,9 @@ impl From<u32> for TransferMethod {
     }
 }
 
+
 impl Into<u32> for TransferMethod {
+    /// TransferMethod into u32
     fn into(self) -> u32 {
         match self {
             Self::Neither => METHOD_NEITHER,
@@ -48,6 +60,7 @@ impl Into<u32> for TransferMethod {
     }
 }
 
+/// ControlCode use a tuple struct
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ControlCode(
     pub DeviceType,
@@ -90,6 +103,7 @@ impl ControlCode {
 }
 
 impl From<u32> for ControlCode {
+    /// ControlCode from u32
     fn from(value: u32) -> Self {
         let method = (value >> Self::METHOD_SHIFT) & Self::METHOD_MASK;
         let num = (value >> Self::NUM_SHIFT) & Self::NUM_MASK;
@@ -106,6 +120,7 @@ impl From<u32> for ControlCode {
 }
 
 impl Into<u32> for ControlCode {
+    /// ControlCode into u32
     fn into(self) -> u32 {
         let method = Into::<u32>::into(self.3) << Self::METHOD_SHIFT;
         let num = self.2 << Self::NUM_SHIFT;

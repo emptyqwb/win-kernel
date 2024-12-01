@@ -1,3 +1,5 @@
+//! make SymbolicLink 
+
 use widestring::U16CString;
 
 use win_kernel_sys::ntoskrnl::{IoCreateSymbolicLink, IoDeleteSymbolicLink};
@@ -5,11 +7,14 @@ use win_kernel_sys::ntoskrnl::{IoCreateSymbolicLink, IoDeleteSymbolicLink};
 use crate::error::{Error, IntoResult};
 use crate::string::create_unicode_string;
 
+
+/// A symbolic link. 
 pub struct SymbolicLink {
     name: U16CString,
 }
 
 impl SymbolicLink {
+    /// new SymbolicLink
     pub fn new(name: &str, target: &str) -> Result<Self, Error> {
         // Convert the name to UTF-16 and then create a UNICODE_STRING.
         let name = U16CString::from_str(name).unwrap();

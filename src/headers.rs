@@ -25,6 +25,8 @@ use win_kernel_sys::base::{
 };
 use win_kernel_sys::{c_uchar, c_ulong, c_ushort, c_void};
 
+
+/// check nt_status 
 #[macro_export]
 macro_rules! check_nt_status {
     ($expression:expr) => {{
@@ -36,6 +38,8 @@ macro_rules! check_nt_status {
     }};
 }
 
+
+/// check if the status is success
 #[macro_export]
 macro_rules! nt_success {
     ($expression:expr) => {
@@ -133,6 +137,8 @@ pub fn ZwCurrentProcess() -> HANDLE {
     (-1_isize as *mut c_void) as HANDLE
 }
 
+
+/// windows LIST_ENTRY
 #[allow(non_snake_case)]
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -141,6 +147,7 @@ pub struct LIST_ENTRY {
     pub Blink: *mut LIST_ENTRY,
 }
 
+/// windows KNONVOLATILE_CONTEXT_POINTERS
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct KNONVOLATILE_CONTEXT_POINTERS {
@@ -148,6 +155,8 @@ pub struct KNONVOLATILE_CONTEXT_POINTERS {
     pub Anonymous2: KNONVOLATILE_CONTEXT_POINTERS_1,
 }
 
+
+/// windows KNONVOLATILE_CONTEXT_POINTERS_0
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union KNONVOLATILE_CONTEXT_POINTERS_0 {
@@ -155,6 +164,8 @@ pub union KNONVOLATILE_CONTEXT_POINTERS_0 {
     pub Anonymous: KNONVOLATILE_CONTEXT_POINTERS_0_0,
 }
 
+
+/// /// is float Register for context 
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct KNONVOLATILE_CONTEXT_POINTERS_0_0 {
@@ -176,6 +187,8 @@ pub struct KNONVOLATILE_CONTEXT_POINTERS_0_0 {
     pub Xmm15: *mut M128A,
 }
 
+
+/// windows KNONVOLATILE_CONTEXT_POINTERS_1
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union KNONVOLATILE_CONTEXT_POINTERS_1 {
@@ -183,6 +196,8 @@ pub union KNONVOLATILE_CONTEXT_POINTERS_1 {
     pub Anonymous: KNONVOLATILE_CONTEXT_POINTERS_1_0,
 }
 
+
+/// is Universal Register for context 
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct KNONVOLATILE_CONTEXT_POINTERS_1_0 {
@@ -204,6 +219,8 @@ pub struct KNONVOLATILE_CONTEXT_POINTERS_1_0 {
     pub R15: *mut u64,
 }
 
+
+/// windows UNWIND_HISTORY_TABLE
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct UNWIND_HISTORY_TABLE {
@@ -241,6 +258,7 @@ pub union IMAGE_RUNTIME_FUNCTION_ENTRY_0 {
 
 pub type CONTEXT_FLAGS = u32;
 
+/// Windows Context
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct CONTEXT {
@@ -292,6 +310,7 @@ pub struct CONTEXT {
     pub LastExceptionFromRip: u64,
 }
 
+/// is u128 low [u64] high [i64]
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct M128A {
@@ -299,6 +318,8 @@ pub struct M128A {
     pub High: i64,
 }
 
+
+/// windows CONTEXT_0
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union CONTEXT_0 {
@@ -926,7 +947,7 @@ pub struct EVENT_TRACE_PROPERTIES {
     pub LogFileMode: ULONG,
     pub FlushTimer: ULONG,
     pub EnableFlags: ULONG,
-    pub DUMMYUNIONNAME: AgeLimitOrFlushThreshold,
+    pub(self) DUMMYUNIONNAME: AgeLimitOrFlushThreshold,
     pub NumberOfBuffers: ULONG,
     pub FreeBuffers: ULONG,
     pub EventsLost: ULONG,
@@ -942,8 +963,8 @@ pub struct EVENT_TRACE_PROPERTIES {
 pub struct WNODE_HEADER {
     pub BufferSize: ULONG,
     pub ProviderId: ULONG,
-    pub HistoricalContextOrVersionLinkage: HistoricalContextOrVersionLinkage,
-    pub KernelHandleOrTimeStamp: KernelHandleOrTimeStamp,
+    pub(self) HistoricalContextOrVersionLinkage: HistoricalContextOrVersionLinkage,
+    pub(self) KernelHandleOrTimeStamp: KernelHandleOrTimeStamp,
     pub Guid: GUID,
     pub ClientContext: ULONG,
     pub Flags: ULONG,
@@ -1935,7 +1956,7 @@ pub struct _HAL_IOMMU_DISPATCH {
     >,
     pub hal_iommu_get_library_context:
         Option<extern "C" fn(core::ffi::c_ulong, core::ffi::c_ulong, *mut *mut c_void) -> c_long>,
-    pub hal_iommu_map_device: Option<
+    pub(self) hal_iommu_map_device: Option<
         extern "C" fn(
             *mut c_void,
             *mut _EXT_IOMMU_DEVICE_ID,
@@ -1943,15 +1964,14 @@ pub struct _HAL_IOMMU_DISPATCH {
             *mut _IOMMU_SVM_CAPABILITIES,
             *mut *mut c_void,
         ) -> c_long,
-    >,
+>,
     pub hal_iommu_enable_device_pasid: Option<extern "C" fn(*mut c_void, *mut c_void) -> c_long>,
     pub hal_iommu_set_address_space: Option<extern "C" fn(*mut c_void, u64) -> c_long>,
     pub hal_iommu_disable_device_pasid: Option<extern "C" fn(*mut c_void, *mut c_void) -> c_long>,
     pub hal_iommu_unmap_device: Option<extern "C" fn(*mut c_void, *mut c_void) -> c_long>,
     pub hal_iommu_free_library_context: Option<extern "C" fn(*mut c_void) -> c_long>,
-    pub hal_iommu_flush_tb:
-        Option<extern "C" fn(*mut c_void, core::ffi::c_ulong, *mut _KTB_FLUSH_VA) -> c_void>,
-    pub hal_iommu_flush_all_pasid:
+    pub(self) hal_iommu_flush_tb: Option<extern "C" fn(*mut c_void, core::ffi::c_ulong, *mut _KTB_FLUSH_VA) -> c_void>,
+    pub(self) hal_iommu_flush_all_pasid:
         Option<extern "C" fn(*mut c_void, core::ffi::c_ulong, *mut _KTB_FLUSH_VA) -> c_void>,
     pub hal_iommu_process_page_request_queue:
         Option<extern "C" fn(core::ffi::c_ulong) -> core::ffi::c_uchar>,
@@ -1965,9 +1985,9 @@ pub struct _HAL_IOMMU_DISPATCH {
     pub hal_iommu_begin_device_reset:
         Option<extern "C" fn(*mut c_void, *mut core::ffi::c_ulong) -> c_long>,
     pub hal_iommu_finalize_device_reset: Option<extern "C" fn(*mut c_void) -> c_long>,
-    pub hal_iommu_get_ats_settings:
+    pub(self) hal_iommu_get_ats_settings:
         Option<extern "C" fn(*mut _EXT_IOMMU_DEVICE_ID, *mut _IOMMU_ATS_SETTINGS) -> c_long>,
-    pub hal_iommu_create_ats_device: Option<
+    pub(self) hal_iommu_create_ats_device: Option<
         extern "C" fn(
             *mut _EXT_IOMMU_DEVICE_ID,
             *mut _DEVICE_OBJECT,
@@ -1976,7 +1996,7 @@ pub struct _HAL_IOMMU_DISPATCH {
         ) -> c_long,
     >,
     pub hal_iommu_delete_ats_device: Option<extern "C" fn(*mut c_void) -> c_void>,
-    pub hal_iommu_get_domain_transition_support:
+    pub(self) hal_iommu_get_domain_transition_support:
         Option<extern "C" fn(*mut _EXT_IOMMU_DEVICE_ID, *mut core::ffi::c_uchar) -> c_long>,
 }
 

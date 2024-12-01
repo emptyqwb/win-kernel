@@ -2,7 +2,7 @@
 //! global allocator with the `#[global_allocator]` attribute when not using the `alloc` feature,
 //! in case you want to specify your own tag to use with [`ExAllocatePool2`] and
 //! [`ExAllocatePoolWithTag`].
-//! 
+
 use core::alloc::{AllocError, Allocator, GlobalAlloc, Layout};
 use core::ptr::NonNull;
 use lazy_static::lazy_static;
@@ -29,6 +29,7 @@ lazy_static! {
 
 /// Represents a kernel allocator that relies on the `ExAllocatePool` family of functions to
 /// allocate and free memory for the `alloc` crate.
+#[cfg(not(feature = "alloctag"))]
 #[derive(Clone, Copy)]
 pub struct KernelAllocator {
     /// The 32-bit tag to use for the pool, this is usually derived from a quadruplet of ASCII
@@ -36,6 +37,14 @@ pub struct KernelAllocator {
     tag: u32,
 }
 
+
+/// Represents a kernel allocator that relies on the `ExAllocatePool` family of functions to
+/// allocate and free memory for the `alloc` crate.
+#[cfg(feature = "alloctag")]
+#[derive(Clone, Copy)]
+pub struct KernelAllocator;
+
+#[cfg(not(feature = "alloctag"))]
 impl KernelAllocator {
     /// Sets up a new kernel allocator with the 32-bit tag specified. The tag is usually derived
     /// from a quadruplet of ASCII bytes, e.g. by invoking `u32::from_ne_bytes(*b"rust")`.
@@ -46,6 +55,7 @@ impl KernelAllocator {
     }
 }
 
+#[cfg(not(feature = "alloctag"))]
 unsafe impl GlobalAlloc for KernelAllocator {
     /// Uses [`ExAllocatePool2`] on Microsoft Windows 10.0.19041 and later, and
     /// [`ExAllocatePoolWithTag`] on older versions of Microsoft Windows to allocate memory.
@@ -81,8 +91,47 @@ unsafe impl GlobalAlloc for KernelAllocator {
     }
 }
 
+#[cfg(feature = "alloctag")]
+unsafe impl GlobalAlloc for KernelAllocator {
+    /// Uses [`ExAllocatePool2`] on Microsoft Windows 10.0.19041 and later, and
+    /// [`ExAllocatePoolWithTag`] on older versions of Microsoft Windows to allocate memory.
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        let use_ex_allocate_pool2 =
+            VERSION_INFO.major() > 10 ||
+            (VERSION_INFO.major() == 10 && VERSION_INFO.build_number() == 19041);
 
+        let ptr = if use_ex_allocate_pool2 {
+            ExAllocatePool2(
+                POOL_TYPE::NonPagedPool as _,
+                layout.size() as u64,
+                u32::from_ne_bytes(*b"rust"),
+            )
+        } else {
+            ExAllocatePoolWithTag(
+                POOL_TYPE::NonPagedPool,
+                layout.size() as u64,
+                u32::from_ne_bytes(*b"rust"),
+            )
+        };
+
+        if ptr.is_null() {
+            panic!("[kernel-alloc] failed to allocate pool.");
+        }
+
+        ptr as _
+    }
+
+    /// Uses [`ExFreePool`] to free allocated memory.
+    unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+        ExFreePool(ptr as _)
+    }
+}
+
+
+
+#[cfg(not(feature = "alloctag"))]
 unsafe impl Allocator for KernelAllocator{
+    /// Allocates memory
     fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
         #[cfg(feature = "no-exec")]
         let pool_type = NonPagedPoolNx;
@@ -114,6 +163,47 @@ unsafe impl Allocator for KernelAllocator{
         }
     }
 
+    /// Deallocates memory
+    unsafe fn deallocate(&self, ptr: NonNull<u8>, _layout: Layout) {
+        ExFreePool(ptr.cast::<u64>().as_ptr() as _);
+    }
+}
+
+#[cfg(feature = "alloctag")]
+unsafe impl Allocator for KernelAllocator{
+    /// Allocates memory
+    fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
+        #[cfg(feature = "no-exec")]
+        let pool_type = NonPagedPoolNx;
+        #[cfg(not(feature = "no-exec"))]
+        let pool_type = NonPagedPool;
+
+
+        let use_ex_allocate_pool2 =
+        VERSION_INFO.major() > 10 ||
+        (VERSION_INFO.major() == 10 && VERSION_INFO.build_number() == 19041);
+
+        let memory =  if use_ex_allocate_pool2 {
+            unsafe { 
+                ExAllocatePool2(pool_type as _, layout.size() as u64, u32::from_ne_bytes(*b"rust") ) as *mut u8
+            } 
+        }  else {
+            unsafe { ExAllocatePoolWithTag(
+                pool_type,
+                layout.size() as u64,
+                u32::from_ne_bytes(*b"rust"),
+            ) as *mut u8}
+        };
+        
+        if memory.is_null() {
+            Err(AllocError)
+        } else {
+            let slice = unsafe { core::slice::from_raw_parts_mut(memory, layout.size()) };
+            Ok(unsafe { NonNull::new_unchecked(slice) })
+        }
+    }
+
+    /// Deallocates memory
     unsafe fn deallocate(&self, ptr: NonNull<u8>, _layout: Layout) {
         ExFreePool(ptr.cast::<u64>().as_ptr() as _);
     }
@@ -127,7 +217,7 @@ pub struct PhysicalAllocator;
 
 
 unsafe impl Allocator for PhysicalAllocator {
-    
+    /// Create a new physical allocator
     fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
         let mut boundary: PHYSICAL_ADDRESS = unsafe { core::mem::zeroed() };
         let mut lowest: PHYSICAL_ADDRESS = unsafe { core::mem::zeroed() };
@@ -155,6 +245,7 @@ unsafe impl Allocator for PhysicalAllocator {
         }
     }
 
+    /// Free allocated memory
     unsafe fn deallocate(&self, ptr: NonNull<u8>, _layout: Layout) {
         MmFreeContiguousMemory(ptr.cast().as_ptr());
     }

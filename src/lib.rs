@@ -2,26 +2,18 @@
 #![feature(alloc_error_handler)]
 #![feature(never_type)]
 #![feature(strict_provenance)]
-#![feature(new_uninit)]
 #![feature(get_mut_unchecked)]
 #![feature(dropck_eyepatch)]
-#![feature(error_in_core)]
 #![feature(negative_impls)]
-#![feature(hashmap_internals)]
 #![feature(hasher_prefixfree_extras)]
 #![feature(const_hash)]
 #![feature(sync_unsafe_cell)]
-#![feature(str_internals)]
-#![feature(char_internals)]
 #![feature(let_chains)]
 #![feature(slice_concat_trait)]
 #![feature(maybe_uninit_slice)]
 #![feature(maybe_uninit_uninit_array)]
-#![feature(pointer_is_aligned)]
 #![feature(allocator_api)]
 #![feature(core_io_borrowed_buf)]
-#![feature(slice_internals)]
-#![feature(specialization)]
 #![feature(extend_one)]
 
 extern crate alloc;
@@ -29,7 +21,7 @@ extern crate alloc;
 pub use hashbrown::HashMap;
 pub use widestring::U16CString;
 
-use win_kernel_sys::base::PDEVICE_OBJECT;
+//use win_kernel_sys::base::PDEVICE_OBJECT;
 pub use win_kernel_sys::base::{
     DRIVER_OBJECT, IRP_MJ_MAXIMUM_FUNCTION, NTSTATUS, STATUS_SUCCESS, UNICODE_STRING,
 };

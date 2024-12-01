@@ -1,3 +1,4 @@
+//! DRIVER_OBJECT  wrapper a driver object
 use alloc::boxed::Box;
 
 use widestring::U16CString;
@@ -12,23 +13,29 @@ use crate::device::{
 use crate::error::{Error, IntoResult};
 use crate::string::create_unicode_string;
 
+
+/// is DRIVER_OBJECT
 pub struct Driver {
     pub(crate) raw: *mut DRIVER_OBJECT,
 }
 
 impl Driver {
+    /// [Driver] from the [*mut DRIVER_OBJECT]
     pub unsafe fn from_raw(raw: *mut DRIVER_OBJECT) -> Self {
         Self { raw }
     }
 
+    /// [Driver] as [*mut DRIVER_OBJECT]
     pub unsafe fn as_raw(&self) -> *const DRIVER_OBJECT {
         self.raw as _
     }
 
+    /// [Driver] as mutable [*mut DRIVER_OBJECT]
     pub unsafe fn as_raw_mut(&mut self) -> *mut DRIVER_OBJECT {
         self.raw as _
     }
 
+    /// Creates a new device with the given name, type, flags, do_flages access and data.
     pub fn create_device<T>(
         &mut self,
         name: &str,

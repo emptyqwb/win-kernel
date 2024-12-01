@@ -1,3 +1,5 @@
+//! is affinity
+
 use win_kernel_sys::base::{ALL_PROCESSOR_GROUPS, GROUP_AFFINITY, PROCESSOR_NUMBER, ULONG_PTR};
 use win_kernel_sys::ntoskrnl::{
     KeGetCurrentProcessorNumberEx, KeGetProcessorNumberFromIndex, KeIpiGenericCall,

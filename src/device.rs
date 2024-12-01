@@ -1,3 +1,5 @@
+//! is Device
+
 use alloc::boxed::Box;
 
 use bitflags::bitflags;
@@ -12,6 +14,7 @@ use win_kernel_sys::ntoskrnl::{IoDeleteDevice, IoGetCurrentIrpStackLocation};
 use crate::error::Error;
 use crate::request::{IoControlRequest, IoRequest, ReadRequest, WriteRequest};
 
+/// windows kernel access 
 #[derive(Copy, Clone, Debug)]
 pub enum Access {
     NonExclusive,
@@ -19,24 +22,30 @@ pub enum Access {
 }
 
 impl Access {
+    /// is exclusive
     pub fn is_exclusive(&self) -> bool {
         matches!(*self, Access::Exclusive)
     }
 }
 
 bitflags! {
+    /// DeviceFlags: u32
     pub struct DeviceFlags: u32 {
+        /// FILE_DEVICE_SECURE_OPEN
         const SECURE_OPEN = win_kernel_sys::base::FILE_DEVICE_SECURE_OPEN;
     }
 }
 
 bitflags! {
     pub struct DeviceDoFlags: u32 {
+        /// buffered io
         const DO_BUFFERED_IO = win_kernel_sys::base::DO_BUFFERED_IO;
+        /// direct io
         const DO_DIRECT_IO   = win_kernel_sys::base::DO_DIRECT_IO;
     }
 }
 
+/// enmu DeviceType 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum DeviceType {
     Port8042,
@@ -100,6 +109,7 @@ pub enum DeviceType {
 }
 
 impl Into<u32> for DeviceType {
+    ///  the device type u32 into
     fn into(self) -> u32 {
         match self {
             DeviceType::Port8042 => win_kernel_sys::base::FILE_DEVICE_8042_PORT,
@@ -170,7 +180,9 @@ impl Into<u32> for DeviceType {
     }
 }
 
+
 impl From<u32> for DeviceType {
+    /// Get the device type from the u32
     fn from(value: u32) -> Self {
         match value {
             win_kernel_sys::base::FILE_DEVICE_8042_PORT => DeviceType::Port8042,
@@ -242,12 +254,17 @@ impl From<u32> for DeviceType {
     }
 }
 
+
+///  device operations  dispatch or release operations
 #[repr(C)]
+#[allow(non_camel_case_types)]
 pub struct device_operations {
     dispatch: Option<extern "C" fn(*mut DEVICE_OBJECT, *mut IRP, u8) -> NTSTATUS>,
     release: Option<extern "C" fn(*mut DEVICE_OBJECT)>,
 }
 
+
+///  device tpye
 pub struct Device {
     raw: *mut DEVICE_OBJECT,
 }
@@ -330,8 +347,8 @@ pub enum Completion {
     Complete(u32, IoRequest),
 }
 
-// Trait definition with default implementations
-// To be implemented by Devices attached to Driver
+/// Trait definition with default implementations
+/// To be implemented by Devices attached to Driver
 pub trait DeviceOperations: Sync + Sized {
     fn create(&mut self, _device: &Device, request: IoRequest) -> Result<Completion, RequestError> {
         Ok(Completion::Complete(0, request))
@@ -370,8 +387,9 @@ pub trait DeviceOperations: Sync + Sized {
     }
 }
 
-// Generic dispatch callback for all IRP codes
-// kernel_module! macro assigns dispatch_device callback for all of them
+/// Generic dispatch callback for all IRP codes
+/// kernel_module! macro assigns dispatch_device callback for all of them
+#[allow(non_snake_case)]
 extern "C" fn dispatch_callback<T: DeviceOperations>(
     device: *mut DEVICE_OBJECT,
     irp: *mut IRP,
@@ -424,6 +442,9 @@ extern "C" fn dispatch_callback<T: DeviceOperations>(
     }
 }
 
+
+
+
 extern "C" fn release_callback<T: DeviceOperations>(device: *mut DEVICE_OBJECT) {
     unsafe {
         let extension = (*device).DeviceExtension as *mut DeviceExtension;
@@ -434,13 +455,14 @@ extern "C" fn release_callback<T: DeviceOperations>(device: *mut DEVICE_OBJECT) 
 
 pub(crate) struct DeviceOperationsVtable<T>(core::marker::PhantomData<T>);
 
-impl<T: DeviceOperations> DeviceOperationsVtable<T> {
+impl<T: DeviceOperations> DeviceOperationsVtable<T> { 
     pub(crate) const VTABLE: device_operations = device_operations {
         dispatch: Some(dispatch_callback::<T>),
         release: Some(release_callback::<T>),
     };
 }
 
+/// DeviceExtension
 #[repr(C)]
 pub struct DeviceExtension {
     pub(crate) vtable: *const device_operations,
@@ -448,6 +470,7 @@ pub struct DeviceExtension {
     pub(crate) device_type: DeviceType,
 }
 
+/// dispatch device
 pub extern "C" fn dispatch_device(device: *mut DEVICE_OBJECT, irp: *mut IRP) -> NTSTATUS {
     let stack_location = unsafe { &*IoGetCurrentIrpStackLocation(irp) };
     let device = unsafe { Device::from_raw(device) };

@@ -1,3 +1,5 @@
+//! user_ptr mod
+
 use crate::error::Error;
 
 /// Pointer to userspace memory
